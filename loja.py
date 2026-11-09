@@ -1,17 +1,35 @@
 class Pessoa:
-    # Guarda os dados pessoais de identificação de um cliente.
+    # Guarda os dados pessoais e valida CPF e e-mail.
     def __init__(self, nome, cpf, email):
         self.nome = nome
         self.cpf = cpf
         self.email = email
 
+    def validar_dados(self):
+        if len(self.email) == 0:
+            return "email vazio"
+        if "@" not in self.email:
+            return "email invalido"
+        if len(self.cpf) != 11:
+            return "cpf invalido"
+        return "ok"
+
+    def imprimir_identificacao(self, endereco, numero):
+        cidade = endereco.cidade
+        print("Pedido", numero, "-", self.nome, "-", cidade)
+
 
 class Endereco:
-    # Guarda os dados de endereço de um cliente.
+    # Guarda o endereço e valida o CEP do cliente.
     def __init__(self, rua, cidade, cep):
         self.rua = rua
         self.cidade = cidade
         self.cep = cep
+
+    def validar_cep(self):
+        if len(self.cep) != 8:
+            return "cep invalido"
+        return "ok"
 
 
 class Cliente:
@@ -21,12 +39,40 @@ class Cliente:
         self.endereco = endereco
         self.tipo = tipo
 
+    def validar_dados(self):
+        pessoa = self.pessoa
+        resultado = pessoa.validar_dados()
+        if resultado != "ok":
+            return resultado
+
+        endereco = self.endereco
+        return endereco.validar_cep()
+
+    def imprimir_identificacao(self, numero):
+        pessoa = self.pessoa
+        endereco = self.endereco
+        pessoa.imprimir_identificacao(endereco, numero)
+
+    def calcular_desconto(self, total):
+        tipo = self.tipo
+        return tipo.calcular_desconto(total)
+
 
 class Produto:
-    # Representa um produto que pode ser vendido pela loja.
+    # Representa um produto e calcula seus valores.
     def __init__(self, nome, preco):
         self.nome = nome
         self.preco = preco
+
+    def calcular_subtotal(self, quantidade):
+        return quantidade * self.preco
+
+    def imprimir_item(self, quantidade):
+        subtotal = self.calcular_subtotal(quantidade)
+        print(
+            "  ", quantidade, "x", self.nome,
+            "= R$ %.2f" % subtotal
+        )
 
 
 class ItemDoPedido:
@@ -34,6 +80,16 @@ class ItemDoPedido:
     def __init__(self, produto, quantidade):
         self.produto = produto
         self.quantidade = quantidade
+
+    def calcular_total(self):
+        produto = self.produto
+        quantidade = self.quantidade
+        return produto.calcular_subtotal(quantidade)
+
+    def imprimir(self):
+        produto = self.produto
+        quantidade = self.quantidade
+        produto.imprimir_item(quantidade)
 
 
 class ItensDoPedido:
@@ -43,28 +99,39 @@ class ItensDoPedido:
 
     def adicionar(self, produto, quantidade):
         item = ItemDoPedido(produto, quantidade)
-        self.__itens.append(item)
+        itens = self.__itens
+        itens.append(item)
 
     def esta_vazia(self):
-        return len(self.__itens) == 0
+        itens = self.__itens
+        return len(itens) == 0
 
     def calcular_total(self):
         total = 0
-        for item in self.__itens:
-            total = total + item.quantidade * item.produto.preco
+        itens = self.__itens
+        for item in itens:
+            total = total + item.calcular_total()
         return total
 
     def imprimir(self):
-        for item in self.__itens:
-            print("  ", item.quantidade, "x", item.produto.nome, "= R$ %.2f" % (
-                item.quantidade * item.produto.preco
-            ))
+        itens = self.__itens
+        for item in itens:
+            item.imprimir()
 
 
 class StatusPedido:
     # Representa uma situação possível de um pedido.
     def __init__(self, descricao):
         self.descricao = descricao
+
+    def imprimir(self):
+        print("  status:", self.descricao)
+
+    def esta_aberto(self):
+        return self == StatusPedido.ABERTO
+
+    def esta_pago(self):
+        return self == StatusPedido.PAGO
 
 
 StatusPedido.ABERTO = StatusPedido("aberto")
@@ -73,9 +140,12 @@ StatusPedido.CANCELADO = StatusPedido("cancelado")
 
 
 class TipoPedido:
-    # Define o percentual de desconto aplicado ao pedido.
+    # Define e calcula o percentual de desconto de um pedido.
     def __init__(self, percentual_desconto):
         self.percentual_desconto = percentual_desconto
+
+    def calcular_desconto(self, total):
+        return total * self.percentual_desconto
 
 
 TipoPedido.VAREJO = TipoPedido(0.10)
@@ -88,45 +158,72 @@ class Pedido:
     def __init__(self, cliente):
         self.cliente = cliente
         self.itens = ItensDoPedido()
-        self.status = StatusPedido.ABERTO
-
-    def get_status(self):
-        return self.status
-
-    def set_status(self, valor):
-        self.status = valor
+        status_aberto = StatusPedido.ABERTO
+        self.status = status_aberto
 
     def adicionar_item(self, produto, quantidade):
-        self.itens.adicionar(produto, quantidade)
+        itens = self.itens
+        itens.adicionar(produto, quantidade)
 
     def calcular_total(self):
-        return self.itens.calcular_total()
+        itens = self.itens
+        return itens.calcular_total()
 
+    def calcular_desconto(self):
+        total = self.calcular_total()
+        cliente = self.cliente
+        return cliente.calcular_desconto(total)
 
-def validar_dados(cliente):
-    if len(cliente.pessoa.email) > 0:
-        if "@" in cliente.pessoa.email:
-            if len(cliente.pessoa.cpf) == 11:
-                if len(cliente.endereco.cep) == 8:
-                    return "ok"
-                else:
-                    return "cep invalido"
-            else:
-                return "cpf invalido"
-        else:
-            return "email invalido"
-    else:
-        return "email vazio"
+    def calcular_valor_a_pagar(self):
+        total = self.calcular_total()
+        desconto = self.calcular_desconto()
+        return total - desconto
 
+    def esta_vazio(self):
+        itens = self.itens
+        return itens.esta_vazia()
 
-def calcular_desconto(tipo, total):
-    return total * tipo.percentual_desconto
+    def esta_pago(self):
+        status = self.status
+        return status.esta_pago()
 
+    def esta_aberto(self):
+        status = self.status
+        return status.esta_aberto()
 
-def calcular_valor_a_pagar(pedido):
-    return pedido.calcular_total() - calcular_desconto(
-        pedido.cliente.tipo, pedido.calcular_total()
-    )
+    def imprimir_identificacao(self, numero):
+        cliente = self.cliente
+        cliente.imprimir_identificacao(numero)
+
+    def imprimir_status(self):
+        status = self.status
+        status.imprimir()
+
+    def imprimir_itens(self):
+        itens = self.itens
+        itens.imprimir()
+
+    def pagar(self):
+        status = self.status
+        if not status.esta_aberto():
+            return False
+
+        itens = self.itens
+        if itens.esta_vazia():
+            return False
+
+        status_pago = StatusPedido.PAGO
+        self.status = status_pago
+        return True
+
+    def cancelar(self):
+        status = self.status
+        if not status.esta_aberto():
+            return False
+
+        status_cancelado = StatusPedido.CANCELADO
+        self.status = status_cancelado
+        return True
 
 
 class Pedidos:
@@ -135,65 +232,47 @@ class Pedidos:
         self.__pedidos = {}
 
     def novo_pedido(self, numero, cliente):
-        resultado = validar_dados(cliente)
+        resultado = cliente.validar_dados()
         if resultado != "ok":
             print("pedido", numero, "recusado:", resultado)
             return None
-        else:
-            pedido = Pedido(cliente)
-            self.__pedidos[numero] = pedido
-            return pedido
+
+        pedido = Pedido(cliente)
+        pedidos = self.__pedidos
+        pedidos[numero] = pedido
+        return pedido
 
     def imprimir_relatorio(self):
-        for numero, pedido in self.__pedidos.items():
-            print(
-                "Pedido", numero, "-",
-                pedido.cliente.pessoa.nome, "-",
-                pedido.cliente.endereco.cidade
-            )
-            print("  status:", pedido.get_status().descricao)
-            pedido.itens.imprimir()
-            if not pedido.itens.esta_vazia():
-                print("  total: R$ %.2f | desconto: R$ %.2f | a pagar: R$ %.2f" % (
-                    pedido.calcular_total(),
-                    calcular_desconto(
-                        pedido.cliente.tipo, pedido.calcular_total()
-                    ),
-                    calcular_valor_a_pagar(pedido)
-                ))
+        pedidos = self.__pedidos
+        for numero, pedido in pedidos.items():
+            pedido.imprimir_identificacao(numero)
+            pedido.imprimir_status()
+            pedido.imprimir_itens()
+            if not pedido.esta_vazio():
+                print(
+                    "  total: R$ %.2f | desconto: R$ %.2f | a pagar: R$ %.2f"
+                    % (
+                        pedido.calcular_total(),
+                        pedido.calcular_desconto(),
+                        pedido.calcular_valor_a_pagar()
+                    )
+                )
 
     def calcular_total_arrecadado(self):
         total = 0
-        for pedido in self.__pedidos.values():
-            if pedido.get_status() == StatusPedido.PAGO:
-                total = total + calcular_valor_a_pagar(pedido)
+        pedidos = self.__pedidos
+        for pedido in pedidos.values():
+            if pedido.esta_pago():
+                total = total + pedido.calcular_valor_a_pagar()
         return total
 
     def contar_pedidos_abertos(self):
         quantidade = 0
-        for pedido in self.__pedidos.values():
-            if pedido.get_status() == StatusPedido.ABERTO:
+        pedidos = self.__pedidos
+        for pedido in pedidos.values():
+            if pedido.esta_aberto():
                 quantidade = quantidade + 1
         return quantidade
-
-
-def pagar_pedido(pedido):
-    if pedido.get_status() == StatusPedido.ABERTO:
-        if not pedido.itens.esta_vazia():
-            pedido.set_status(StatusPedido.PAGO)
-            return True
-        else:
-            return False
-    else:
-        return False
-
-
-def cancelar_pedido(pedido):
-    if pedido.get_status() == StatusPedido.ABERTO:
-        pedido.set_status(StatusPedido.CANCELADO)
-        return True
-    else:
-        return False
 
 
 # Roteiro da loja
@@ -271,13 +350,14 @@ pedido_do_gil = pedidos.novo_pedido(8, cliente_gil)
 pedido_do_gil.adicionar_item(produto_fone, 2)
 
 
-print("pagar 1:", pagar_pedido(pedido_da_ana))
-print("pagar 3:", pagar_pedido(segundo_pedido_da_ana))
-print("pagar 5:", pagar_pedido(pedido_do_diego))
-print("pagar 6:", pagar_pedido(pedido_da_eva))
-print("cancelar 5:", cancelar_pedido(pedido_do_diego))
-print("cancelar 1:", cancelar_pedido(pedido_da_ana))
+print("pagar 1:", pedido_da_ana.pagar())
+print("pagar 3:", segundo_pedido_da_ana.pagar())
+print("pagar 5:", pedido_do_diego.pagar())
+print("pagar 6:", pedido_da_eva.pagar())
+print("cancelar 5:", pedido_do_diego.cancelar())
+print("cancelar 1:", pedido_da_ana.cancelar())
 
 pedidos.imprimir_relatorio()
 print("arrecadado: R$ %.2f" % pedidos.calcular_total_arrecadado())
 print("abertos:", pedidos.contar_pedidos_abertos())
+
