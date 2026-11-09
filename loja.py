@@ -1,5 +1,6 @@
 pedidos = []
 
+
 class Cliente:
     def __init__(self, nome, cpf, email, rua, cidade, cep):
         self.nome = nome
@@ -22,13 +23,33 @@ class ItemDoPedido:
         self.quantidade = quantidade
 
 
+class StatusPedido:
+    def __init__(self, descricao):
+        self.descricao = descricao
+
+
+StatusPedido.ABERTO = StatusPedido("aberto")
+StatusPedido.PAGO = StatusPedido("pago")
+StatusPedido.CANCELADO = StatusPedido("cancelado")
+
+
+class TipoPedido:
+    def __init__(self, percentual_desconto):
+        self.percentual_desconto = percentual_desconto
+
+
+TipoPedido.VAREJO = TipoPedido(0.10)
+TipoPedido.FUNCIONARIO = TipoPedido(0.20)
+TipoPedido.NORMAL = TipoPedido(0)
+
+
 class Pedido:
     def __init__(self, numero, cliente, tipo):
         self.numero = numero
         self.cliente = cliente
         self.tipo = tipo
         self.itens = []
-        self.status = "A"
+        self.status = StatusPedido.ABERTO
 
     def get_status(self):
         return self.status
@@ -77,13 +98,7 @@ def calcular_total(pedido):
 
 
 def calcular_desconto(tipo, total):
-    if tipo == "V":
-        desconto = total * 0.10
-    elif tipo == "F":
-        desconto = total * 0.20
-    else:
-        desconto = 0
-    return desconto
+    return total * tipo.percentual_desconto
 
 
 def calcular_valor_a_pagar(pedido):
@@ -93,9 +108,9 @@ def calcular_valor_a_pagar(pedido):
 
 
 def pagar_pedido(pedido):
-    if pedido.get_status() == "A":
+    if pedido.get_status() == StatusPedido.ABERTO:
         if len(pedido.itens) > 0:
-            pedido.set_status("P")
+            pedido.set_status(StatusPedido.PAGO)
             return True
         else:
             return False
@@ -104,20 +119,15 @@ def pagar_pedido(pedido):
 
 
 def cancelar_pedido(pedido):
-    if pedido.get_status() == "A":
-        pedido.set_status("C")
+    if pedido.get_status() == StatusPedido.ABERTO:
+        pedido.set_status(StatusPedido.CANCELADO)
         return True
     else:
         return False
 
 
 def descrever_status(status):
-    if status == "A":
-        return "aberto"
-    elif status == "P":
-        return "pago"
-    else:
-        return "cancelado"
+    return status.descricao
 
 
 def imprimir_relatorio():
@@ -139,7 +149,7 @@ def imprimir_relatorio():
 def calcular_total_arrecadado():
     total = 0
     for pedido in pedidos:
-        if pedido.get_status() == "P":
+        if pedido.get_status() == StatusPedido.PAGO:
             total = total + calcular_valor_a_pagar(pedido)
     return total
 
@@ -147,7 +157,7 @@ def calcular_total_arrecadado():
 def contar_pedidos_abertos():
     quantidade = 0
     for pedido in pedidos:
-        if pedido.get_status() == "A":
+        if pedido.get_status() == StatusPedido.ABERTO:
             quantidade = quantidade + 1
     return quantidade
 
@@ -196,25 +206,25 @@ produto_livro = Produto("Livro", 89.5)
 produto_fone = Produto("Fone", 60.0)
 
 
-pedido_da_ana = novo_pedido(1, cliente_ana, "V")
+pedido_da_ana = novo_pedido(1, cliente_ana, TipoPedido.VAREJO)
 adicionar_item(pedido_da_ana, produto_caderno, 2)
 adicionar_item(pedido_da_ana, produto_caneta, 5)
 
-novo_pedido(2, cliente_bruno, "N")
+novo_pedido(2, cliente_bruno, TipoPedido.NORMAL)
 
-segundo_pedido_da_ana = novo_pedido(3, cliente_ana, "V")
+segundo_pedido_da_ana = novo_pedido(3, cliente_ana, TipoPedido.VAREJO)
 adicionar_item(segundo_pedido_da_ana, produto_livro, 1)
 
-novo_pedido(4, cliente_carla, "F")
+novo_pedido(4, cliente_carla, TipoPedido.FUNCIONARIO)
 
-pedido_do_diego = novo_pedido(5, cliente_diego, "N")
+pedido_do_diego = novo_pedido(5, cliente_diego, TipoPedido.NORMAL)
 
-pedido_da_eva = novo_pedido(6, cliente_eva, "F")
+pedido_da_eva = novo_pedido(6, cliente_eva, TipoPedido.FUNCIONARIO)
 adicionar_item(pedido_da_eva, produto_fone, 1)
 
-novo_pedido(7, cliente_fabio, "N")
+novo_pedido(7, cliente_fabio, TipoPedido.NORMAL)
 
-pedido_do_gil = novo_pedido(8, cliente_gil, "N")
+pedido_do_gil = novo_pedido(8, cliente_gil, TipoPedido.NORMAL)
 adicionar_item(pedido_do_gil, produto_fone, 2)
 
 
