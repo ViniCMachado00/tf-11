@@ -1,16 +1,31 @@
 pedidos = []
 
-
-class Pedido:
-    def __init__(self, numero, nome_do_cliente, cpf_do_cliente,
-                 email_do_cliente, rua, cidade, cep, tipo):
-        self.numero = numero
-        self.nome_do_cliente = nome_do_cliente
-        self.cpf_do_cliente = cpf_do_cliente
-        self.email_do_cliente = email_do_cliente
+class Cliente:
+    def __init__(self, nome, cpf, email, rua, cidade, cep):
+        self.nome = nome
+        self.cpf = cpf
+        self.email = email
         self.rua = rua
         self.cidade = cidade
         self.cep = cep
+
+
+class Produto:
+    def __init__(self, nome, preco):
+        self.nome = nome
+        self.preco = preco
+
+
+class ItemDoPedido:
+    def __init__(self, produto, quantidade):
+        self.produto = produto
+        self.quantidade = quantidade
+
+
+class Pedido:
+    def __init__(self, numero, cliente, tipo):
+        self.numero = numero
+        self.cliente = cliente
         self.tipo = tipo
         self.itens = []
         self.status = "A"
@@ -22,11 +37,11 @@ class Pedido:
         self.status = valor
 
 
-def validar_dados(email_do_cliente, cpf_do_cliente, cep):
-    if len(email_do_cliente) > 0:
-        if "@" in email_do_cliente:
-            if len(cpf_do_cliente) == 11:
-                if len(cep) == 8:
+def validar_dados(cliente):
+    if len(cliente.email) > 0:
+        if "@" in cliente.email:
+            if len(cliente.cpf) == 11:
+                if len(cliente.cep) == 8:
                     return "ok"
                 else:
                     return "cep invalido"
@@ -38,27 +53,26 @@ def validar_dados(email_do_cliente, cpf_do_cliente, cep):
         return "email vazio"
 
 
-def novo_pedido(numero, nome_do_cliente, cpf_do_cliente,
-                email_do_cliente, rua, cidade, cep, tipo):
-    resultado = validar_dados(email_do_cliente, cpf_do_cliente, cep)
+def novo_pedido(numero, cliente, tipo):
+    resultado = validar_dados(cliente)
     if resultado != "ok":
         print("pedido", numero, "recusado:", resultado)
         return None
     else:
-        pedido = Pedido(numero, nome_do_cliente, cpf_do_cliente,
-                        email_do_cliente, rua, cidade, cep, tipo)
+        pedido = Pedido(numero, cliente, tipo)
         pedidos.append(pedido)
         return pedido
 
 
-def adicionar_item(pedido, produto, quantidade, preco):
-    pedido.itens.append([produto, quantidade, preco])
+def adicionar_item(pedido, produto, quantidade):
+    item = ItemDoPedido(produto, quantidade)
+    pedido.itens.append(item)
 
 
 def calcular_total(pedido):
     total = 0
     for item in pedido.itens:
-        total = total + item[1] * item[2]
+        total = total + item.quantidade * item.produto.preco
     return total
 
 
@@ -108,10 +122,12 @@ def descrever_status(status):
 
 def imprimir_relatorio():
     for pedido in pedidos:
-        print("Pedido", pedido.numero, "-", pedido.nome_do_cliente, "-", pedido.cidade)
+        print("Pedido", pedido.numero, "-", pedido.cliente.nome, "-", pedido.cliente.cidade)
         print("  status:", descrever_status(pedido.get_status()))
         for item in pedido.itens:
-            print("  ", item[1], "x", item[0], "= R$ %.2f" % (item[1] * item[2]))
+            print("  ", item.quantidade, "x", item.produto.nome, "= R$ %.2f" % (
+                item.quantidade * item.produto.preco
+            ))
         if len(pedido.itens) > 0:
             print("  total: R$ %.2f | desconto: R$ %.2f | a pagar: R$ %.2f" % (
                 calcular_total(pedido),
@@ -137,42 +153,70 @@ def contar_pedidos_abertos():
 
 
 # Roteiro da loja
-pedido_da_ana = novo_pedido(1, "Ana Souza", "12345678901", "ana@mail.com",
-                            "Rua das Flores, 10", "Sorocaba", "18010000", "V")
-adicionar_item(pedido_da_ana, "Caderno", 2, 15.5)
-adicionar_item(pedido_da_ana, "Caneta", 5, 2.5)
 
-novo_pedido(2, "Bruno Lima", "123", "bruno@mail.com",
-            "Av. Central, 200", "Votorantim", "18110000", "N")
-
-segundo_pedido_da_ana = novo_pedido(
-    3, "Ana Souza", "12345678901", "ana@mail.com",
-    "Rua das Flores, 10", "Sorocaba", "18010000", "V"
-)
-adicionar_item(segundo_pedido_da_ana, "Livro", 1, 89.5)
-
-novo_pedido(4, "Carla Dias", "98765432100", "carla.mail.com",
-            "Rua do Sol, 55", "Sorocaba", "18020000", "F")
-
-pedido_do_diego = novo_pedido(
-    5, "Diego Rocha", "11122233344", "diego@mail.com",
-    "Rua Nova, 7", "Itu", "13300000", "N"
+cliente_ana = Cliente(
+    "Ana Souza", "12345678901", "ana@mail.com",
+    "Rua das Flores, 10", "Sorocaba", "18010000"
 )
 
-pedido_da_eva = novo_pedido(
-    6, "Eva Nunes", "55566677788", "eva@mail.com",
-    "Alameda Azul, 1", "Itu", "13300001", "F"
+cliente_bruno = Cliente(
+    "Bruno Lima", "123", "bruno@mail.com",
+    "Av. Central, 200", "Votorantim", "18110000"
 )
-adicionar_item(pedido_da_eva, "Fone", 1, 60.0)
 
-novo_pedido(7, "Fabio Costa", "99988877766", "fabio@mail.com",
-            "Rua Velha, 3", "Itu", "123", "N")
-
-pedido_do_gil = novo_pedido(
-    8, "Gil Alves", "44455566677", "gil@mail.com",
-    "Rua do Meio, 9", "Sorocaba", "18030000", "N"
+cliente_carla = Cliente(
+    "Carla Dias", "98765432100", "carla.mail.com",
+    "Rua do Sol, 55", "Sorocaba", "18020000"
 )
-adicionar_item(pedido_do_gil, "Fone", 2, 60.0)
+
+cliente_diego = Cliente(
+    "Diego Rocha", "11122233344", "diego@mail.com",
+    "Rua Nova, 7", "Itu", "13300000"
+)
+
+cliente_eva = Cliente(
+    "Eva Nunes", "55566677788", "eva@mail.com",
+    "Alameda Azul, 1", "Itu", "13300001"
+)
+
+cliente_fabio = Cliente(
+    "Fabio Costa", "99988877766", "fabio@mail.com",
+    "Rua Velha, 3", "Itu", "123"
+)
+
+cliente_gil = Cliente(
+    "Gil Alves", "44455566677", "gil@mail.com",
+    "Rua do Meio, 9", "Sorocaba", "18030000"
+)
+
+
+produto_caderno = Produto("Caderno", 15.5)
+produto_caneta = Produto("Caneta", 2.5)
+produto_livro = Produto("Livro", 89.5)
+produto_fone = Produto("Fone", 60.0)
+
+
+pedido_da_ana = novo_pedido(1, cliente_ana, "V")
+adicionar_item(pedido_da_ana, produto_caderno, 2)
+adicionar_item(pedido_da_ana, produto_caneta, 5)
+
+novo_pedido(2, cliente_bruno, "N")
+
+segundo_pedido_da_ana = novo_pedido(3, cliente_ana, "V")
+adicionar_item(segundo_pedido_da_ana, produto_livro, 1)
+
+novo_pedido(4, cliente_carla, "F")
+
+pedido_do_diego = novo_pedido(5, cliente_diego, "N")
+
+pedido_da_eva = novo_pedido(6, cliente_eva, "F")
+adicionar_item(pedido_da_eva, produto_fone, 1)
+
+novo_pedido(7, cliente_fabio, "N")
+
+pedido_do_gil = novo_pedido(8, cliente_gil, "N")
+adicionar_item(pedido_do_gil, produto_fone, 2)
+
 
 print("pagar 1:", pagar_pedido(pedido_da_ana))
 print("pagar 3:", pagar_pedido(segundo_pedido_da_ana))
@@ -184,4 +228,3 @@ print("cancelar 1:", cancelar_pedido(pedido_da_ana))
 imprimir_relatorio()
 print("arrecadado: R$ %.2f" % calcular_total_arrecadado())
 print("abertos:", contar_pedidos_abertos())
-
