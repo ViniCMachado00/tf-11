@@ -1,12 +1,25 @@
-class Cliente:
-    # Guarda os dados de identificação e endereço de um cliente.
-    def __init__(self, nome, cpf, email, rua, cidade, cep):
+class Pessoa:
+    # Guarda os dados pessoais de identificação de um cliente.
+    def __init__(self, nome, cpf, email):
         self.nome = nome
         self.cpf = cpf
         self.email = email
+
+
+class Endereco:
+    # Guarda os dados de endereço de um cliente.
+    def __init__(self, rua, cidade, cep):
         self.rua = rua
         self.cidade = cidade
         self.cep = cep
+
+
+class Cliente:
+    # Reúne os dados pessoais, endereço e tipo de um cliente.
+    def __init__(self, pessoa, endereco, tipo):
+        self.pessoa = pessoa
+        self.endereco = endereco
+        self.tipo = tipo
 
 
 class Produto:
@@ -71,10 +84,9 @@ TipoPedido.NORMAL = TipoPedido(0)
 
 
 class Pedido:
-    # Reúne o cliente, o tipo, os itens e o status de um pedido.
-    def __init__(self, cliente, tipo):
+    # Reúne o cliente, os itens e o status de um pedido.
+    def __init__(self, cliente):
         self.cliente = cliente
-        self.tipo = tipo
         self.itens = ItensDoPedido()
         self.status = StatusPedido.ABERTO
 
@@ -92,10 +104,10 @@ class Pedido:
 
 
 def validar_dados(cliente):
-    if len(cliente.email) > 0:
-        if "@" in cliente.email:
-            if len(cliente.cpf) == 11:
-                if len(cliente.cep) == 8:
+    if len(cliente.pessoa.email) > 0:
+        if "@" in cliente.pessoa.email:
+            if len(cliente.pessoa.cpf) == 11:
+                if len(cliente.endereco.cep) == 8:
                     return "ok"
                 else:
                     return "cep invalido"
@@ -113,7 +125,7 @@ def calcular_desconto(tipo, total):
 
 def calcular_valor_a_pagar(pedido):
     return pedido.calcular_total() - calcular_desconto(
-        pedido.tipo, pedido.calcular_total()
+        pedido.cliente.tipo, pedido.calcular_total()
     )
 
 
@@ -122,25 +134,31 @@ class Pedidos:
     def __init__(self):
         self.__pedidos = {}
 
-    def novo_pedido(self, numero, cliente, tipo):
+    def novo_pedido(self, numero, cliente):
         resultado = validar_dados(cliente)
         if resultado != "ok":
             print("pedido", numero, "recusado:", resultado)
             return None
         else:
-            pedido = Pedido(cliente, tipo)
+            pedido = Pedido(cliente)
             self.__pedidos[numero] = pedido
             return pedido
 
     def imprimir_relatorio(self):
         for numero, pedido in self.__pedidos.items():
-            print("Pedido", numero, "-", pedido.cliente.nome, "-", pedido.cliente.cidade)
+            print(
+                "Pedido", numero, "-",
+                pedido.cliente.pessoa.nome, "-",
+                pedido.cliente.endereco.cidade
+            )
             print("  status:", pedido.get_status().descricao)
             pedido.itens.imprimir()
             if not pedido.itens.esta_vazia():
                 print("  total: R$ %.2f | desconto: R$ %.2f | a pagar: R$ %.2f" % (
                     pedido.calcular_total(),
-                    calcular_desconto(pedido.tipo, pedido.calcular_total()),
+                    calcular_desconto(
+                        pedido.cliente.tipo, pedido.calcular_total()
+                    ),
                     calcular_valor_a_pagar(pedido)
                 ))
 
@@ -183,38 +201,45 @@ def cancelar_pedido(pedido):
 pedidos = Pedidos()
 
 cliente_ana = Cliente(
-    "Ana Souza", "12345678901", "ana@mail.com",
-    "Rua das Flores, 10", "Sorocaba", "18010000"
+    Pessoa("Ana Souza", "12345678901", "ana@mail.com"),
+    Endereco("Rua das Flores, 10", "Sorocaba", "18010000"),
+    TipoPedido.VAREJO
 )
 
 cliente_bruno = Cliente(
-    "Bruno Lima", "123", "bruno@mail.com",
-    "Av. Central, 200", "Votorantim", "18110000"
+    Pessoa("Bruno Lima", "123", "bruno@mail.com"),
+    Endereco("Av. Central, 200", "Votorantim", "18110000"),
+    TipoPedido.NORMAL
 )
 
 cliente_carla = Cliente(
-    "Carla Dias", "98765432100", "carla.mail.com",
-    "Rua do Sol, 55", "Sorocaba", "18020000"
+    Pessoa("Carla Dias", "98765432100", "carla.mail.com"),
+    Endereco("Rua do Sol, 55", "Sorocaba", "18020000"),
+    TipoPedido.FUNCIONARIO
 )
 
 cliente_diego = Cliente(
-    "Diego Rocha", "11122233344", "diego@mail.com",
-    "Rua Nova, 7", "Itu", "13300000"
+    Pessoa("Diego Rocha", "11122233344", "diego@mail.com"),
+    Endereco("Rua Nova, 7", "Itu", "13300000"),
+    TipoPedido.NORMAL
 )
 
 cliente_eva = Cliente(
-    "Eva Nunes", "55566677788", "eva@mail.com",
-    "Alameda Azul, 1", "Itu", "13300001"
+    Pessoa("Eva Nunes", "55566677788", "eva@mail.com"),
+    Endereco("Alameda Azul, 1", "Itu", "13300001"),
+    TipoPedido.FUNCIONARIO
 )
 
 cliente_fabio = Cliente(
-    "Fabio Costa", "99988877766", "fabio@mail.com",
-    "Rua Velha, 3", "Itu", "123"
+    Pessoa("Fabio Costa", "99988877766", "fabio@mail.com"),
+    Endereco("Rua Velha, 3", "Itu", "123"),
+    TipoPedido.NORMAL
 )
 
 cliente_gil = Cliente(
-    "Gil Alves", "44455566677", "gil@mail.com",
-    "Rua do Meio, 9", "Sorocaba", "18030000"
+    Pessoa("Gil Alves", "44455566677", "gil@mail.com"),
+    Endereco("Rua do Meio, 9", "Sorocaba", "18030000"),
+    TipoPedido.NORMAL
 )
 
 
@@ -224,25 +249,25 @@ produto_livro = Produto("Livro", 89.5)
 produto_fone = Produto("Fone", 60.0)
 
 
-pedido_da_ana = pedidos.novo_pedido(1, cliente_ana, TipoPedido.VAREJO)
+pedido_da_ana = pedidos.novo_pedido(1, cliente_ana)
 pedido_da_ana.adicionar_item(produto_caderno, 2)
 pedido_da_ana.adicionar_item(produto_caneta, 5)
 
-pedidos.novo_pedido(2, cliente_bruno, TipoPedido.NORMAL)
+pedidos.novo_pedido(2, cliente_bruno)
 
-segundo_pedido_da_ana = pedidos.novo_pedido(3, cliente_ana, TipoPedido.VAREJO)
+segundo_pedido_da_ana = pedidos.novo_pedido(3, cliente_ana)
 segundo_pedido_da_ana.adicionar_item(produto_livro, 1)
 
-pedidos.novo_pedido(4, cliente_carla, TipoPedido.FUNCIONARIO)
+pedidos.novo_pedido(4, cliente_carla)
 
-pedido_do_diego = pedidos.novo_pedido(5, cliente_diego, TipoPedido.NORMAL)
+pedido_do_diego = pedidos.novo_pedido(5, cliente_diego)
 
-pedido_da_eva = pedidos.novo_pedido(6, cliente_eva, TipoPedido.FUNCIONARIO)
+pedido_da_eva = pedidos.novo_pedido(6, cliente_eva)
 pedido_da_eva.adicionar_item(produto_fone, 1)
 
-pedidos.novo_pedido(7, cliente_fabio, TipoPedido.NORMAL)
+pedidos.novo_pedido(7, cliente_fabio)
 
-pedido_do_gil = pedidos.novo_pedido(8, cliente_gil, TipoPedido.NORMAL)
+pedido_do_gil = pedidos.novo_pedido(8, cliente_gil)
 pedido_do_gil.adicionar_item(produto_fone, 2)
 
 
